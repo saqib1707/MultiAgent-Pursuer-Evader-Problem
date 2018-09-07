@@ -1,101 +1,89 @@
-import numpy as np 
-import matplotlib.pyplot as plt 
+import numpy as np
+import matplotlib.pyplot as plt
 import pdb
-
 
 numberAgents = 1
 timeStep = 1.0
-# alpha = 2
-# k = 0.005
+arenaLength = 2
 shepherdSpeed = 0.1
-maxAgentSpeed = 10
-numberIteration = 100
-
+maxAgentSpeed = arenaLength*np.sqrt(2)
+m = 1.5
+factor = 4
+alpha = 2
+accuracy = 0.999
+epsilon = 0
 flag = False
-# sign = -1.0
-# prevSlope = 5
 
 def calcSpeed(distance):
-	speed = (maxAgentSpeed-distance) if maxAgentSpeed>=distance else 0
+	# speed = (maxAgentSpeed-m*distance) if maxAgentSpeed>=m*distance else 0
+	# speed = shepherdSpeed/(10*pow(distance,alpha)) if distance > 1.0 else shepherdSpeed/10 
+	speed = np.exp(-distance) if distance < 3 else epsilon
 	return speed
 
 def getUpdatedPosition(position, velocity):
 	return position+velocity*timeStep
 
 def main():
+	count = 0
 	global flag
-	destination = np.random.uniform(low=0.0, high=10.0, size=(2,1))
-	agentPosition = np.random.uniform(low=0.0, high=10.0, size=(2,1))
-	shepherdPosition = np.random.uniform(low=0.0, high=10.0, size=(2,1))
+	destination = np.zeros((2,1))
+	agentPosition = np.random.uniform(low=-arenaLength/2, high=arenaLength/2, size=(2,1))
+	shepherdPosition = np.random.uniform(low=-arenaLength/2, high=arenaLength/2, size=(2,1))
 
-	# radius = np.sqrt(np.matmul(np.transpose(destination-shepherdPosition), (destination-shepherdPosition)))
 	shepherdVelocity = np.zeros((2,1), dtype=np.float32)
 	agentPositionList = [agentPosition]
 	shepherdPositionList = [shepherdPosition]
-	count = 0
-	while(count < numberIteration):
-		radius = np.sqrt(np.matmul(np.transpose(agentPosition-shepherdPosition), (agentPosition-shepherdPosition)))
-		agentSpeed = calcSpeed(radius)
-		lineOfSightVector = agentPosition-shepherdPosition
-		# unitVector = np.linalg.norm(lineOfSightVector)
-		lineOfSightVector = lineOfSightVector/np.linalg.norm(lineOfSightVector)
-		agentVelocity = agentSpeed*lineOfSightVector
-		print(agentVelocity)
+	Xda = agentPosition-destination
+	Xds = shepherdPosition-destination
+	Xda = Xda/np.linalg.norm(Xda)
+	Xds = Xds/np.linalg.norm(Xds)
+	if(np.matmul(Xda.T,Xds)>accuracy):
+		print("Initially Already in line")
+	else:
+		while(True):
+			lineOfSightVector = shepherdPosition-agentPosition
+			# radius = np.sqrt(np.matmul(lineOfSightVector.T, lineOfSightVector))
+			dsa = np.linalg.norm(lineOfSightVector)
+			lineOfSightVector = lineOfSightVector/dsa
+			agentSpeed = calcSpeed(dsa)
+			agentVelocity = -agentSpeed*lineOfSightVector
+			if(agentSpeed > 0):
+				count+=1
+				shepherdVelocity = shepherdSpeed*lineOfSightVector
+			else:
+				if(shepherdPosition[0,0] < agentPosition[0,0]):
+					sign = 1
+				else:
+					sign = -1
+				slope = (shepherdPosition[1,0]-agentPosition[1,0])/(shepherdPosition[0,0]-agentPosition[0,0])
+				shepherdVelocity[1,0] = sign*shepherdSpeed/np.sqrt(1+pow(slope,2))
+				shepherdVelocity[0,0] = -slope*shepherdVelocity[1,0]
+				Xda = agentPosition-destination
+				Xds = shepherdPosition-destination
+				Xda = Xda/np.linalg.norm(Xda)
+				Xds = Xds/np.linalg.norm(Xds)
+				if(np.matmul(Xda.T,Xds)>accuracy):
+					flag = True
+			shepherdPosition = getUpdatedPosition(shepherdPosition, shepherdVelocity)
+			agentPosition = getUpdatedPosition(agentPosition, agentVelocity)
+			agentPositionList.append(agentPosition)
+			shepherdPositionList.append(shepherdPosition)
+			if(flag):
+				break
 
-
-		# print(radius)
-		try:
-			slope = (shepherdPosition[1,0]-agentPosition[1,0])/(shepherdPosition[0,0]-agentPosition[0,0])
-			# print(slope)
-		except RuntimeWarning:
-			flag = True
-		
-		# if (slope < 0 and prevSlope > 0):
-		# 	sign = -1*sign
-
-		if(flag == False):
-			C = pow(shepherdSpeed, 2)-2*slope*agentVelocity[1,0]*agentVelocity[0,0]-pow((slope*agentVelocity[1,0]),2)-pow(agentVelocity[0,0],2)
-			print(pow((pow(slope,2)*agentVelocity[1,0]+slope*agentVelocity[0,0]),2)+C*(pow(slope,2)+1))
-			shepherdVelocity[1,0] = (slope*(slope*agentVelocity[1,0]+agentVelocity[0,0])+np.sqrt(pow((pow(slope,2)*agentVelocity[1,0]+slope*agentVelocity[0,0]),2)+C*(pow(slope,2)+1)))/(pow(slope,2)+1)
-			shepherdVelocity[0,0] =  agentVelocity[0,0]-slope*(shepherdVelocity[1,0]-agentVelocity[1,0])
-		# else:
-		# 	if(shepherdPosition[1,0] < [1,0]):
-		# 		shepherdVelocity = np.array([[shepherdSpeed],[0]], dtype=np.float32)
-		# 	else:
-		# 		shepherdVelocity = np.array([[-shepherdSpeed],[0]], dtype=np.float32)
-		# 	flag = False
-		
-		# distance = np.reshape(np.linalg.norm(lineOfSightVector, axis=1), (2,1))
-		# force = getForce(distance)
-		# agentSpeed = force
-		# agentVelocity = agentSpeed*(lineOfSightVector/distance)
-		# pdb.set_trace()
-		#update step
-		shepherdPosition = getUpdatedPosition(shepherdPosition, shepherdVelocity)
-		agentPosition = getUpdatedPosition(agentPosition, agentVelocity)
-		agentPositionList.append(agentPosition)
-		shepherdPositionList.append(shepherdPosition)
-		# prevSlope = slope
-		count+=1
-
+	# print(count)
 	agentPositionList = np.array(agentPositionList)
 	shepherdPositionList = np.array(shepherdPositionList)
 
-	# plt.figure(1)
-	# plt.subplot(211);plt.plot(agentPositionList[:,0,0], agentPositionList[:,0,1])
-	# plt.subplot(212);plt.plot(agentPositionList[:,1,0], agentPositionList[:,1,1])
-	# plt.show()
-
-	# plt.figure(2)
-	# plt.plot(shepherdPositionList[:,0,0], shepherdPositionList[:,1,0], 'r--')
-	# plt.show()
-
-	# pdb.set_trace()
-	# print(agentPositionList)
 	plt.figure(1)
-	plt.plot(agentPositionList[:,0,0], agentPositionList[:,1,0], 'r--')
-	# plt.plot(agentPositionList[:,1,0], agentPositionList[:,1,1], 'g--')
-	# plt.plot(shepherdPositionList[:,0,0], shepherdPositionList[:,1,0], 'b--')
+	# print(shepherdPositionList)
+	plt.plot(destination[0,0],destination[1,0], marker='x')
+	plt.plot(agentPositionList[:,0,0], agentPositionList[:,1,0], 'r', marker='.')
+	plt.plot(shepherdPositionList[:,0,0], shepherdPositionList[:,1,0], 'b')
+	plt.plot([shepherdPositionList[-1,0,0],destination[0,0]],[shepherdPositionList[-1,1,0],destination[1,0]], 'g--')
+	# plt.arrow(shepherdPositionList[5,0,0], shepherdPositionList[5,1,0], shepherdPositionList[6,0,0], shepherdPositionList[6,1,0], shape='full', lw=0, length_includes_head=True, head_width=.05)
+	plt.ylim((-arenaLength*factor, +arenaLength*factor))
+	plt.xlim((-arenaLength*factor, +arenaLength*factor))
 	plt.grid(True)
 	plt.show()
 
