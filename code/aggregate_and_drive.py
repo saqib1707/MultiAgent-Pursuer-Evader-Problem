@@ -1,19 +1,21 @@
 import numpy as np 
 import matplotlib.pyplot as plt 
-import random
+import random, math
 import pdb
 
 timeStep = 1.0
-numberAgents = 10
 arenaLength = 2
+numberAgents = 10
+
 maxAgentSpeed = 0.1
+expScaleFactor = 0.35   # plot tells that 0.35 scale factor closely approximates 1/r 
 shepherdSpeed = 0.1
-destination = np.array([[4],[4]], dtype=np.float32)
+destination = np.array([[4],[4]], dtype=np.float32)  # randomly assumed to be (4,4)
 thresholdRadius = arenaLength/4
 aggregateDone = False
 
-def calcSpeed(distance, costheta): 
-	speed = 0.5*maxAgentSpeed*np.exp(-distance)*(1+costheta)
+def calcSpeed(distance, costheta):
+	speed = 0.5*maxAgentSpeed*np.exp(-expScaleFactor*distance)*(1+costheta)
 	return speed
 
 def getUpdatedPosition(position, velocity):
@@ -32,8 +34,9 @@ def main():
 	agentPositionList = [agentPosition]
 	shepherdPositionList = [shepherdPosition]
 	centroidList = [centroid]
+	shepherdCircleRadius = []
 
-	isClockwise = -1
+	isClockwise = -1   # randomly assumed any direction for rotation
 	count=0
 	flag = 1    # flag = 1 corresponds to straight path and flag = 0 to circular path
 	rotationMatrix = np.array([[0, isClockwise*1],[-isClockwise*1, 0]], dtype=np.float32)
@@ -54,6 +57,7 @@ def main():
 			shepherdVelocityDirection = centroidShepherdVector
 		else:
 			shepherdVelocityDirection = np.matmul(rotationMatrix, centroidShepherdVector)
+			shepherdCircleRadius.append(centroidShepherdDistance)
 		shepherdVelocity = shepherdVelocityDirection*shepherdSpeed
 
 		agentShepherdVector = agentPosition - shepherdPosition
@@ -75,13 +79,31 @@ def main():
 	agentPositionList = np.array(agentPositionList)
 	shepherdPositionList = np.array(shepherdPositionList)
 	centroidList = np.array(centroidList)
-	fig = plt.figure(1)
+	shepherdCircleRadius = np.array(shepherdCircleRadius)
+	
+	fig1 = plt.figure(1)
 	# plt.plot(destination[0,0], destination[1,0], marker='x')
 	plt.plot(agentPositionList[:,0,:], agentPositionList[:,1,:], 'r')
 	plt.plot(shepherdPositionList[:,0,0], shepherdPositionList[:,1,0], 'g')
 	plt.plot(centroidList[:,0,0], centroidList[:,1,0], 'b')
 	circle = plt.Circle((centroid[0,0], centroid[1,0]), thresholdRadius, color='black', fill=False)
 	plt.gcf().gca().add_artist(circle)
+	plt.grid(True)
+	plt.show()
+
+	fig2 = plt.figure(2)
+	plt.plot(agentPositionList[:,0,:], agentPositionList[:,1,:], 'r')
+	plt.plot(centroidList[:,0,0], centroidList[:,1,0], 'b')
+	circle = plt.Circle((centroid[0,0], centroid[1,0]), thresholdRadius, color='black', fill=False)
+	plt.gcf().gca().add_artist(circle)
+	plt.grid(True)
+	plt.show()
+
+
+	fig3 = plt.figure(3)
+	plt.plot(shepherdCircleRadius)
+	plt.xlabel('Iterations')
+	plt.ylabel('shepherd Circle Motion Radius')
 	plt.grid(True)
 	plt.show()
 
