@@ -1,20 +1,19 @@
-import numpy as np 
-import matplotlib.pyplot as plt 
+import numpy as np
+import matplotlib.pyplot as plt
 import random, math
 import pdb
 
 timeStep = 1.0
 arenaLength = 2
-numberAgents = 10
-
+numberAgents = 50
 maxAgentSpeed = 0.1
-expScaleFactor = 0.35   # plot tells that 0.35 scale factor closely approximates 1/r 
+expScaleFactor = 0.50   # plot tells that 0.35 scale factor closely approximates 1/r 
 shepherdSpeed = 0.1
 destination = np.array([[4],[4]], dtype=np.float32)  # randomly assumed to be (4,4)
 thresholdRadius = arenaLength/4
 aggregateDone = False
 
-def calcSpeed(distance, costheta):
+def calcSpeed(distance, costheta=1):
 	speed = 0.5*maxAgentSpeed*np.exp(-expScaleFactor*distance)*(1+costheta)
 	return speed
 
@@ -24,7 +23,7 @@ def getUpdatedPosition(position, velocity):
 def returnCentroid(agentPosition):
 	return np.array([[np.mean(agentPosition[0,:])], [np.mean(agentPosition[1,:])]])
 
-def main():
+def aggregate():
 	global aggregateDone
 	agentPosition = np.random.uniform(low=-arenaLength/2, high=arenaLength/2, size=(2,numberAgents))
 	a = list(range(-2, -1))+list(range(1, 2))
@@ -65,7 +64,7 @@ def main():
 		agentShepherdVector = agentShepherdVector/agentShepherdDistance
 
 		costheta = np.matmul(shepherdVelocityDirection.T, agentShepherdVector)
-		agentSpeed = np.reshape(calcSpeed(agentShepherdDistance, costheta), (1,numberAgents))
+		agentSpeed = np.reshape(calcSpeed(agentShepherdDistance), (1,numberAgents))
 		agentVelocity = agentShepherdVector*agentSpeed
 
 		shepherdPosition = getUpdatedPosition(shepherdPosition, shepherdVelocity)
@@ -100,12 +99,12 @@ def main():
 	plt.show()
 
 
-	fig3 = plt.figure(3)
-	plt.plot(shepherdCircleRadius)
-	plt.xlabel('Iterations')
-	plt.ylabel('shepherd Circle Motion Radius')
-	plt.grid(True)
-	plt.show()
+	# fig3 = plt.figure(3)
+	# plt.plot(shepherdCircleRadius)
+	# plt.xlabel('Iterations')
+	# plt.ylabel('shepherd Circle Motion Radius')
+	# plt.grid(True)
+	# plt.show()
 
 if __name__ == '__main__':
-	main()
+	aggregate()
