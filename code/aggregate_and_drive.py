@@ -10,7 +10,7 @@ maxAgentSpeed = 0.1
 expScaleFactor = 0.50   # plot tells that 0.35 scale factor closely approximates 1/r 
 shepherdSpeed = 0.1
 destination = np.array([[4],[4]], dtype=np.float32)  # randomly assumed to be (4,4)
-thresholdRadius = arenaLength/4
+thresholdRadius = arenaLength/5
 aggregateDone = False
 
 def calcSpeed(distance, costheta=1):

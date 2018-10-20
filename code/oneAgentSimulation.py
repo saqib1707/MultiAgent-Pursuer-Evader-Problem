@@ -5,19 +5,20 @@ import pdb
 numberAgents = 1
 timeStep = 1.0
 arenaLength = 2
-shepherdSpeed = 0.1
-maxAgentSpeed = arenaLength*np.sqrt(2)
-m = 1.5
-factor = 4
-alpha = 2
-accuracy = 0.999
+shepherdSpeed = 10.0
+maxAgentSpeed = 5.0
+distance_threshold = 10.0*arenaLength*np.sqrt(2)
+# m = 1.5
+factor = 5
+# alpha = 2
+accuracy = 0.9995
 epsilon = 0
 flag = False
 
 def calcSpeed(distance):
 	# speed = (maxAgentSpeed-m*distance) if maxAgentSpeed>=m*distance else 0
 	# speed = shepherdSpeed/(10*pow(distance,alpha)) if distance > 1.0 else shepherdSpeed/10 
-	speed = np.exp(-distance) if distance < 3 else epsilon
+	speed = maxAgentSpeed*np.exp(-distance) #if distance < distance_threshold else epsilon 
 	return speed
 
 def getUpdatedPosition(position, velocity):
@@ -47,10 +48,13 @@ def main():
 			lineOfSightVector = lineOfSightVector/dsa
 			agentSpeed = calcSpeed(dsa)
 			agentVelocity = -agentSpeed*lineOfSightVector
-			if(agentSpeed > 0):
+			# corresponds to motion when shepherd moves in straight line opposite
+			# to the agent
+			if(agentSpeed > shepherdSpeed/10.0):
 				count+=1
 				shepherdVelocity = shepherdSpeed*lineOfSightVector
 			else:
+				# shepherd does clockwise rotation
 				if(shepherdPosition[0,0] < agentPosition[0,0]):
 					sign = 1
 				else:
@@ -82,8 +86,9 @@ def main():
 	plt.plot(shepherdPositionList[:,0,0], shepherdPositionList[:,1,0], 'b')
 	plt.plot([shepherdPositionList[-1,0,0],destination[0,0]],[shepherdPositionList[-1,1,0],destination[1,0]], 'g--')
 	# plt.arrow(shepherdPositionList[5,0,0], shepherdPositionList[5,1,0], shepherdPositionList[6,0,0], shepherdPositionList[6,1,0], shape='full', lw=0, length_includes_head=True, head_width=.05)
-	plt.ylim((-arenaLength*factor, +arenaLength*factor))
-	plt.xlim((-arenaLength*factor, +arenaLength*factor))
+	
+	# plt.ylim((-arenaLength*factor, +arenaLength*factor))
+	# plt.xlim((-arenaLength*factor, +arenaLength*factor))
 	plt.grid(True)
 	plt.show()
 
