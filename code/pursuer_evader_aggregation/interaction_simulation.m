@@ -3,7 +3,7 @@ clear; clc;
 % tuning hyper-parameters
 number_interval = 40;
 time_interval = 1.0;
-number_evader = 5;
+number_evader = 2;
 vemax_repulsion = 0.1;
 vemax_attraction = 0.1;
 vpmax = 0.1;

@@ -1,4 +1,4 @@
-function [error] = evader_path_verify(Ne, ip, Ni, ti, opt_x, vemax_repulsion, vemax_attraction, K, var, epsilon, dth)
+function [error] = evader_path_verify(Ne, ip, Ni, ti, opt_x, vemax_repulsion, vemax_attraction, K, var, epsilon, dth, fd)
 
     % Below part is just for verifying whether evaders and pursuer
     % is following the control law
@@ -34,8 +34,8 @@ function [error] = evader_path_verify(Ne, ip, Ni, ti, opt_x, vemax_repulsion, ve
         plot(evader_position(2*i-1,2:Ni),evader_position(2*i,2:Ni), 'o-', 'color', 'yellow');hold on;
         plot(evader_position(2*i-1,Ni+1),evader_position(2*i,Ni+1), 'o-', 'color', 'red');hold on;
     end
-    final_centroid = mean(reshape(evader_position(:,Ni+1),2,Ne),2);
-    draw_circle(final_centroid(1,1),final_centroid(2,1),epsilon);
+%     final_centroid = mean(reshape(evader_position(:,Ni+1),2,Ne),2);
+    draw_circle(fd(1,1),fd(2,1),epsilon);
     grid on;
     xlabel('X');
     ylabel('Y');
