@@ -4,6 +4,7 @@ clear; clc;
 number_interval = 25;
 time_interval = 1.0;
 number_evader = 2;
+number_pursuer = 1;
 vemax_repulsion = 0.5;
 vemax_attraction = 0;
 vpmax = 0.5;
@@ -12,18 +13,19 @@ K = 1.0;
 dth = 2*sqrt(2);
 epsilon = 0.05;
 
-var = 2*(number_evader+1);
+var = 2*(number_evader+number_pursuer);
 N = var*number_interval;
 
 % initial_point = rand(var,1)*2-1;
+initial_point = [-1;0;1;0;-1;-1];
 % initial_point(var-1:var) = [-1;-1];
-% starting_point = rand(N,1)*2-1;
+starting_point = rand(N,1)*2-1;
 
-file = load('data_file.mat');
-starting_point = file.starting_point;
-initial_point = file.initial_point;
+% file = load('data_file.mat');
+% starting_point = file.starting_point;
+% initial_point = file.initial_point;
 
-destination = [1;1];
+destination = [2;2];
 lower_bound(1:N,1) = -100;
 upper_bound(1:N,1) = 100;
 
@@ -39,7 +41,7 @@ Aeq = [];
 beq = [];
 
 options = optimoptions('fmincon', 'Algorithm', 'sqp', ...
-'MaxFunEvals', 500000, 'MaxIter', 10000, 'TolFun', 1e-1, 'TolCon', 1e-2, 'TolX', 1e-12, ...
+'MaxFunEvals', 200000, 'MaxIter', 10000, 'TolFun', 1e-1, 'TolCon', 1e-2, 'TolX', 1e-12, ...
 'Display', 'iter', 'GradObj', 'off', 'DerivativeCheck','off', 'FinDiffType', 'central');
 
 obj_func = @(x)objective_function(x, number_interval, time_interval, var, initial_point);
@@ -54,8 +56,8 @@ figure;
 plot(pursuer_position(1,:), pursuer_position(2,:), 'o-', 'color', 'blue');hold on;
 for i=1:number_evader
     plot(evader_position(2*i-1,1),evader_position(2*i,1), 'o-', 'color', 'green');hold on;
-    plot(evader_position(2*i-1,2:number_interval),evader_position(2*i,2:number_interval),'o-','color','red');hold on;
-    plot(evader_position(2*i-1,number_interval+1),evader_position(2*i,number_interval+1), 'o-', 'color', 'yellow');hold on;
+    plot(evader_position(2*i-1,2:number_interval),evader_position(2*i,2:number_interval),'o-','color','yellow');hold on;
+    plot(evader_position(2*i-1,number_interval+1),evader_position(2*i,number_interval+1), 'o-', 'color', 'red');hold on;
 end
 final_centroid = mean(reshape(evader_position(:,number_interval+1),2,number_evader),2);
 draw_circle(destination(1,1), destination(2,1), epsilon);
