@@ -1,3 +1,7 @@
 *.m~
 .DS_Store
 *.pyc
+optimizer/*
+presentation/images/*
+code/pursuer_evader_aggregation/data_file.mat
+extra_references/*
