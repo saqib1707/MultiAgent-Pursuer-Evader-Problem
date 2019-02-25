@@ -1,5 +1,5 @@
-function [path_length] = objective_function(x, Ni, ti, var, ip)
-    parameters = horzcat(ip,reshape(x,var,Ni));
-    temp = parameters(var-1:var,2:Ni+1) - parameters(var-1:var,1:Ni);
+function [path_length] = objective_function(x,Ni,var,ipp)
+    parameters = horzcat(ipp,reshape(x,var,Ni));
+    temp = parameters(:,2:Ni+1) - parameters(:,1:Ni);
     path_length = sum(sqrt(sum(temp.^2,1)));
 end
