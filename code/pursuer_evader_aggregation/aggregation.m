@@ -1,13 +1,13 @@
 clear; clc;
 
 % hyper-parameters
-number_interval = 25;
+number_interval = 30;
 time_interval = 1.0;
 number_evader = 2;
 number_pursuer = 1;
-vemax_repulsion = 0.1;
+vemax_repulsion = 0.3;
 vemax_attraction = 0;
-vpmax = 0.1;
+vpmax = 0.3;
 vpmin = 0.05;
 K = 1.0;
 epsilon = 0.05;
@@ -16,31 +16,35 @@ var = 2*number_pursuer;
 N = var*number_interval;
 
 % initial_evader_position = rand(2*number_evader,1)*2-1;
-% initial_evader_position = [0;0.5;0;-0.5];
-% initial_pursuer_position = [-1;-1];
+initial_evader_position = [0.5;0;-0.5;0];
+initial_pursuer_position = [-1;-1];
 starting_point = rand(N,1)*2-1;
 
-file = load('data_file.mat');
+% file = load('data_file.mat');
 % starting_point = file.starting_point;
-initial_pursuer_position = file.initial_pursuer_position;
-initial_evader_position = file.initial_evader_position;
+% initial_pursuer_position = file.initial_pursuer_position;
+% initial_evader_position = file.initial_evader_position;
 
 destination = [1;1];
-lower_bound(1:N,1) = -10;
-upper_bound(1:N,1) = 10;
+lower_bound(1:N,1) = -5;
+upper_bound(1:N,1) = 5;
 
 A = [];
 b = [];
 Aeq = [];
 beq = [];
 
-options = optimoptions('fmincon', 'Algorithm', 'interior-point', ...
-'MaxFunEvals', 200000, 'MaxIter', 10000, 'TolFun', 1e-1, 'TolCon', 1e-1, 'TolX', 1e-12, ...
-'Display', 'iter', 'GradObj', 'off', 'DerivativeCheck','off', 'FinDiffType', 'central');
+% options = optimoptions('patternsearch', 'MaxFunEvals', 200000, 'MaxIter', 10000, 'TolFun', 1e-6, ...
+% 'TolCon', 1e-6, 'TolX', 1e-10, 'Display', 'iter', 'GradObj', 'off', 'DerivativeCheck','off', ...
+% 'FinDiffType', 'central', 'PlotFcns', 'psplotbestf');
+
+options = psoptimset('MaxFunEvals', 300000, 'MaxIter', 10000, 'TolFun', 1e-6, ...
+'TolCon', 1e-6, 'TolX', 1e-6, 'Display', 'iter', 'PlotFcns', @psplotbestf);
 
 obj_func = @(x)objective_function(x,number_interval,var,initial_pursuer_position);
 nonlinearcons = @(x)constraints(x,var,number_interval,number_evader,time_interval,initial_evader_position,initial_pursuer_position,vemax_repulsion,vemax_attraction,vpmax,vpmin,epsilon,K,destination);
-[opt_x, fval, exitflag, output] = fmincon(obj_func,starting_point,A,b,Aeq,beq,lower_bound,upper_bound,nonlinearcons,options);
+% [opt_x, fval, exitflag, output] = fmincon(obj_func,starting_point,A,b,Aeq,beq,lower_bound,upper_bound,nonlinearcons,options);
+[opt_x] = patternsearch(obj_func,starting_point,A,b,Aeq,beq,lower_bound,upper_bound,nonlinearcons,options);
 
 pursuer_position = horzcat(initial_pursuer_position,reshape(opt_x,var,number_interval));
 evader_position = compute_evader_position(pursuer_position,number_evader,initial_evader_position,number_interval,time_interval,vemax_repulsion,vemax_attraction,K);
