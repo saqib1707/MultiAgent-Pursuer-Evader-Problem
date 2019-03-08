@@ -10,7 +10,6 @@ vemax_attraction = 0;
 vpmax = 0.5;
 vpmin = 0.1;
 K = 1.0;
-dth = 2*sqrt(2);
 epsilon = 0.05;
 
 var = 2*(number_evader+number_pursuer);
@@ -44,8 +43,8 @@ options = optimoptions('fmincon', 'Algorithm', 'sqp', ...
 'MaxFunEvals', 200000, 'MaxIter', 10000, 'TolFun', 1e-1, 'TolCon', 1e-2, 'TolX', 1e-12, ...
 'Display', 'iter', 'GradObj', 'off', 'DerivativeCheck','off', 'FinDiffType', 'central');
 
-obj_func = @(x)objective_function(x, number_interval, time_interval, var, initial_point);
-nonlinearcons = @(x)constraints(x, number_interval, time_interval, number_evader, vemax_repulsion, vemax_attraction, vpmax, vpmin, K, epsilon, var, initial_point, dth, destination);
+obj_func = @(x)objective_function(x, number_interval, var, initial_point);
+nonlinearcons = @(x)constraints(x, number_interval, time_interval, number_evader, vemax_repulsion, vemax_attraction, vpmax, vpmin, K, epsilon, var, initial_point, destination);
 [opt_x, fval, exitflag, output] = fmincon(obj_func, starting_point, A, b, Aeq, beq, lower_bound, upper_bound, nonlinearcons, options);
 
 optimized_parameters = horzcat(initial_point,reshape(opt_x,var,number_interval));
@@ -67,4 +66,4 @@ ylabel('Y');
 title('shepherding-optimization-result');
 hold off;
 
-norm_error = evader_path_verify(number_evader,initial_point,number_interval,time_interval,opt_x,vemax_repulsion,vemax_attraction,K,var,epsilon,dth,destination);
+norm_error = evader_path_verify(number_evader,initial_point,number_interval,time_interval,opt_x,vemax_repulsion,vemax_attraction,K,var,epsilon,destination);
