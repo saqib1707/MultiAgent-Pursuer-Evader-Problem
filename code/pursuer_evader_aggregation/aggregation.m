@@ -1,23 +1,23 @@
 clear; clc;
 
 % ---------------------hyper-parameters------------------------
-hp.number_interval = 25;
+hp.number_interval = 30;
 hp.time_interval = 1.0;
 hp.number_evader = 2;
 hp.number_pursuer = 1;
 hp.vemax_repulsion = 0.5;
 hp.vemax_attraction = 0;
-hp.vpmax = 0.5;
+hp.vpmax = 0.3;
 hp.vpmin = 0.05;
 hp.K = 1.0;
 hp.epsilon = 0.05;
 
 hp.solver = 'fmincon';
 hp.algorithm = 'sqp';
-hp.max_func_evals = 1e5/2;
+hp.max_func_evals = 1e5;
 hp.max_iter = 1e4;
-hp.tolfun = 1e-6;
-hp.tolcon = 1e-6;
+hp.tolfun = 1e-5;
+hp.tolcon = 1e-5;
 hp.tolx = 1e-10;
 
 hp.var = 2*(hp.number_evader+hp.number_pursuer);
