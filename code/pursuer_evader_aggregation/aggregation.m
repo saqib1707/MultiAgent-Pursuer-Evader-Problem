@@ -5,7 +5,7 @@ hp.number_interval = 30;
 hp.time_interval = 1.0;
 hp.number_evader = 2;
 hp.number_pursuer = 1;
-hp.vemax_repulsion = 0.4;
+hp.vemax_repulsion = 0.5;
 hp.vemax_attraction = 0;
 hp.vpmax = 0.3;
 hp.vpmin = 0.05;
@@ -19,6 +19,8 @@ hp.max_iter = 1e4;
 hp.tolfun = 1e-4;
 hp.tolcon = 1e-4;
 hp.tolx = 1e-12;
+hp.num_trial_points = 1000;
+hp.num_stage_one_points = 200;
 
 hp.var = 3*hp.number_pursuer;
 hp.N = hp.var*hp.number_interval;
@@ -72,7 +74,7 @@ problem = createOptimProblem(hp.solver,'objective',obj_func,'x0',hp.starting_poi
 hp.beq,'Aineq',hp.Aineq,'bineq',hp.bineq,'lb',hp.lower_bound,'ub',hp.upper_bound,'nonlcon', ...
 nonlinearcons,'options',options);
 
-gs = GlobalSearch('NumTrialPoints',400,'NumStageOnePoints',200,'Display','iter');
+gs = GlobalSearch('NumTrialPoints',hp.num_trial_points,'NumStageOnePoints',hp.num_stage_one_points,'Display','iter');
 [hp.opt_x,hp.fval,hp.exitflag,hp.outputs] = run(gs,problem);
 
 optimized_parameters = horzcat(hp.initial_pursuer_position,reshape(hp.opt_x,hp.var,hp.number_interval));
