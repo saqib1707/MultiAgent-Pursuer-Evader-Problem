@@ -7,7 +7,7 @@ hp.number_evader = 2;
 hp.number_pursuer = 1;
 hp.vemax_repulsion = 0.4;
 hp.vemax_attraction = 0;
-hp.vpmax = 0.4;
+hp.vpmax = 0.3;
 hp.vpmin = 0.05;
 hp.K = 1.0;
 hp.epsilon = 0.05;
@@ -19,6 +19,8 @@ hp.max_iter = 1e4;
 hp.tolfun = 1e-4;
 hp.tolcon = 1e-4;
 hp.tolx = 1e-12;
+hp.num_trial_points = 1000;
+hp.num_stage_one_points = 200;
 
 hp.var = 2*hp.number_pursuer;
 hp.N = hp.var*hp.number_interval;
@@ -35,7 +37,7 @@ hp.initial_evader_position = [0.5;0;-0.5;0];
 hp.starting_point = rand(hp.N,1)*2-1;
 % hp.starting_point = file.starting_point;
 
-hp.destination = [1;1];
+hp.destination = [2;2];
 hp.lower_bound(1:hp.N,1) = -5.0;
 hp.upper_bound(1:hp.N,1) = 5.0;
 
@@ -54,7 +56,7 @@ options = optimoptions(@fmincon, 'Algorithm', hp.algorithm, 'MaxFunEvals', hp.ma
 
 obj_func = @(x)objective_function(x, hp.number_interval, hp.var, hp.initial_pursuer_position);
 
-nonlinearcons = @(x)constraints(x, hp.var, hp.number_interval, hp.number_evader, hp.time_interval, ...
+nonlinearcons = @(x)non_linear_constraints(x, hp.var, hp.number_interval, hp.number_evader, hp.time_interval, ...
 hp.initial_evader_position, hp.initial_pursuer_position, hp.vemax_repulsion, hp.vemax_attraction, ...
 hp.vpmax, hp.vpmin, hp.epsilon, hp.K, hp.destination);
 
@@ -67,16 +69,16 @@ problem = createOptimProblem(hp.solver,'objective',obj_func,'x0',hp.starting_poi
 hp.beq,'Aineq',hp.Aineq,'bineq',hp.bineq,'lb',hp.lower_bound,'ub',hp.upper_bound,'nonlcon', ...
 nonlinearcons,'options',options);
 
-gs = GlobalSearch('NumTrialPoints',400,'NumStageOnePoints',200,'Display','iter');
+gs = GlobalSearch('NumTrialPoints',hp.num_trial_points,'NumStageOnePoints',hp.num_stage_one_points,'Display','iter');
 [hp.opt_x,hp.fval,hp.exitflag,hp.outputs] = run(gs,problem);
 
 pursuer_position = horzcat(hp.initial_pursuer_position,reshape(hp.opt_x,hp.var,hp.number_interval));
 evader_position = compute_evader_position(pursuer_position,hp.number_evader,hp.initial_evader_position,...
 hp.number_interval,hp.time_interval,hp.vemax_repulsion,hp.vemax_attraction,hp.K);
 
-velocity = zeros(hp.number_interval-1,1);
+pursuer_velocity = zeros(hp.number_interval-1,1);
 for t = 1:hp.number_interval-1
-    velocity(t,1) = norm(pursuer_position(:,t+1) - pursuer_position(:,t));
+    pursuer_velocity(t,1) = norm(pursuer_position(:,t+1) - pursuer_position(:,t));
 end
 
 figure;
