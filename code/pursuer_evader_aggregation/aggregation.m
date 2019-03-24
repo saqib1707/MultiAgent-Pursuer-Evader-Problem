@@ -1,43 +1,43 @@
 clear; clc;
 
-% ---------------------hyper-parameters------------------------
-hp.number_interval = 30;
+% ---------------------hyperparameters------------------------
+hp.number_interval = 40;
 hp.time_interval = 1.0;
 hp.number_evader = 2;
 hp.number_pursuer = 1;
-hp.vemax_repulsion = 0.4;
+hp.vemax_repulsion = 0.2;
 hp.vemax_attraction = 0;
-hp.vpmax = 0.3;
+hp.vpmax = 0.2;
 hp.vpmin = 0.05;
 hp.K = 1.0;
 hp.epsilon = 0.05;
 
 hp.solver = 'fmincon';
-hp.algorithm = 'sqp';
+hp.algorithm = 'interior-point';
 hp.max_func_evals = 2e5;
 hp.max_iter = 1e4;
-hp.tolfun = 1e-4;
-hp.tolcon = 1e-4;
+hp.tolfun = 1e-1;
+hp.tolcon = 1e-2;
 hp.tolx = 1e-12;
-hp.num_trial_points = 1000;
+hp.num_trial_points = 400;
 hp.num_stage_one_points = 200;
 
 hp.var = 2*hp.number_pursuer;
 hp.N = hp.var*hp.number_interval;
 
-% file = load('data_file.mat');
+% file = load('../../results-plots/19-03-19/hyperparameters/22.mat');
 
 % hp.initial_pursuer_position = file.initial_pursuer_position;
-hp.initial_pursuer_position = [-1;-1];
+hp.initial_pursuer_position = [0;-2];
 
 % hp.initial_evader_position = rand(2*hp.number_evader,1)*2-1;
 % hp.initial_evader_position = file.initial_evader_position;
 hp.initial_evader_position = [0.5;0;-0.5;0];
 
 hp.starting_point = rand(hp.N,1)*2-1;
-% hp.starting_point = file.starting_point;
+% hp.starting_point = file.hp.opt_x;
 
-hp.destination = [2;2];
+hp.destination = [0;2];
 hp.lower_bound(1:hp.N,1) = -5.0;
 hp.upper_bound(1:hp.N,1) = 5.0;
 
@@ -48,8 +48,9 @@ hp.beq = [];
 % ---------------------------hyper-parameters------------------------
 
 options = optimoptions(@fmincon, 'Algorithm', hp.algorithm, 'MaxFunEvals', hp.max_func_evals, ...
-'MaxIter', hp.max_iter, 'TolFun', hp.tolfun, 'TolCon', hp.tolcon, 'TolX', hp.tolx, 'Display', 'off', ... 
-'GradObj', 'off', 'DerivativeCheck','off', 'FinDiffType', 'central');
+'MaxIter', hp.max_iter, 'TolFun', hp.tolfun, 'TolCon', hp.tolcon, 'TolX', hp.tolx, 'Display', 'notify-detailed', ... 
+'GradObj', 'off', 'DerivativeCheck','off', 'FinDiffType', 'central', 'FunValCheck', 'on', 'Diagnostics', 'off',...
+'UseParallel', true);
 
 % options = psoptimset('MaxFunEvals', hp.max_func_evals, 'MaxIter', hp.max_iter, 'TolFun', hp.tolfun, ...
 % 'TolCon', hp.tolcon, 'TolX', hp.tolx, 'Display', 'iter', 'PlotFcns', @psplotbestf);
