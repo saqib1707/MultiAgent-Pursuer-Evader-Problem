@@ -5,15 +5,13 @@ hp.number_interval = 50;
 hp.time_interval = 1.0;
 hp.number_evader = 2;
 hp.number_pursuer = 1;
-hp.vemax_repulsion = 0.4;
+hp.vemax_repulsion = 0.3;
 hp.vemax_attraction = 0;
-hp.vp = 0.1;
+hp.vp = 0.2;
 hp.K = 1.0;
-hp.epsilon = 0.05*2;
+hp.epsilon = 0.05;
 hp.angle_resolution = 1.0;
-hp.alpha = 0.8;
-
-% file = load('data_file.mat');
+hp.alpha = 0.7;      % weight factor
 
 % hp.initial_pursuer_position = file.initial_pursuer_position;
 hp.initial_pursuer_position = [-1;-1];
@@ -22,7 +20,7 @@ hp.initial_pursuer_position = [-1;-1];
 % hp.initial_evader_position = file.initial_evader_position;
 hp.initial_evader_position = [0.5;0;-0.5;0];
 
-hp.destination = [0;0];
+hp.destination = [1;0];
 % ---------------------------hyper-parameters------------------------
 
 pursuer_trajectory = zeros(2*hp.number_pursuer,hp.number_interval+1);
@@ -58,9 +56,6 @@ for t = 1:hp.number_interval
     evader_dest_distance = sqrt(sum((reshape(evader_trajectory(:,t),2,hp.number_evader) - repmat(hp.destination,[1,hp.number_evader])).^2,1));
     inter_evader_distance = norm(evader_trajectory(1:2,t) - evader_trajectory(3:4,t));
     distance_list(:,t) = [transpose(evader_dest_distance);inter_evader_distance;hp.alpha*sum(evader_dest_distance)+(1-hp.alpha)*inter_evader_distance];
-%     if t == 100
-%         hp.alpha = 1.0;
-%     end
 end
 evader_dest_distance = sqrt(sum((reshape(evader_trajectory(:,hp.number_interval+1),2,hp.number_evader) - repmat(hp.destination,[1,hp.number_evader])).^2,1));
 inter_evader_distance = norm(evader_trajectory(1:2,hp.number_interval+1) - evader_trajectory(3:4,hp.number_interval+1));
@@ -93,4 +88,6 @@ plot(distance_list(4,:),'color','black');hold on;
 grid on;
 ylabel('distance-metric');
 xlabel('time-step');
+legend('E1-dest-distance','E2-dest-distance','E1-E2-distance','overall-metric');
+title('distance-metric plot wrt iterations');
 hold off;
