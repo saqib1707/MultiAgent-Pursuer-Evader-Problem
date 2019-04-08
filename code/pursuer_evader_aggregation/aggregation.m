@@ -1,20 +1,20 @@
 clear; clc;
 
 % ---------------------hyperparameters------------------------
-hp.number_interval = 40;
+hp.number_interval = 60;
 hp.time_interval = 1.0;
 hp.number_evader = 2;
 hp.number_pursuer = 1;
-hp.vemax_repulsion = 0.3;
+hp.vemax_repulsion = 0.4;
 hp.vemax_attraction = 0;
-hp.vpmax = 0.2;
+hp.vpmax = 0.3;
 hp.vpmin = 0.05;
 hp.K = 1.0;
 hp.epsilon = 0.05;
 
 hp.solver = 'fmincon';
 hp.algorithm = 'sqp';
-hp.max_func_evals = 1e5;
+hp.max_func_evals = 2e5;
 hp.max_iter = 1e4;
 hp.tolfun = 1e-2;
 hp.tolcon = 1e-3;
@@ -25,10 +25,10 @@ hp.num_stage_one_points = 200;
 hp.var = 2*hp.number_pursuer;
 hp.N = hp.var*hp.number_interval;
 
-file = load('../../results-plots/19-03-19/hyperparameters/43.mat');
+file = load('../../results-plots/05-04-19/hyperparameters/8.mat');
 
 % hp.initial_pursuer_position = file.initial_pursuer_position;
-hp.initial_pursuer_position = [-1;-1];
+hp.initial_pursuer_position = [-5;-5];
 
 % hp.initial_evader_position = rand(2*hp.number_evader,1)*2-1;
 % hp.initial_evader_position = file.initial_evader_position;
@@ -37,9 +37,9 @@ hp.initial_evader_position = [0.5;0;-0.5;0];
 % hp.starting_point = rand(hp.N,1)*2-1;
 hp.starting_point = file.hp.opt_x;
 
-hp.destination = [1;0.4];
-hp.lower_bound(1:hp.N,1) = -3.0;
-hp.upper_bound(1:hp.N,1) = 3.0;
+hp.destination = [4;-5];
+hp.lower_bound(1:hp.N,1) = -10.0;
+hp.upper_bound(1:hp.N,1) = 10.0;
 
 hp.Aineq = [];
 hp.bineq = [];
