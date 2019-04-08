@@ -5,3 +5,7 @@ optimizer/*
 presentation/images/*
 code/pursuer_evader_aggregation/data_file.mat
 extra_references/*
+fig2png.m
+results-plots/15-03-19/png-plots/
+results-plots/19-03-19/png-plots/
+*.csv
