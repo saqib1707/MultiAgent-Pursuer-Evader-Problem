@@ -1,6 +1,8 @@
-clear;clc;
-root_dir = '../../results-plots/19-03-19/';
-for index=1:43
+clc;clear;close all;
+root_dir = '../../results-plots/05-04-19/';
+num_files = size(dir(root_dir),1);
+
+for index = 7
     filename = strcat(strcat(root_dir,'hyperparameters/'),strcat(int2str(index),'.mat'));
     load(filename);
     pursuer_trajectory = horzcat(hp.initial_pursuer_position,reshape(hp.opt_x,2,hp.number_interval));
@@ -9,7 +11,7 @@ for index=1:43
     pursuer_velocity = pursuer_trajectory(:,2:end) - pursuer_trajectory(:,1:end-1);
     pursuer_evader_center_vector = evader_center_trajectory(:,1:end-1) - pursuer_trajectory(:,1:end-1);
 
-    figure;
+    h0 = figure;
     plot(pursuer_trajectory(1,:), pursuer_trajectory(2,:), 'o-', 'color', 'blue');hold on;
     for i=1:hp.number_evader
         plot(evader_trajectory(2*i-1,1),evader_trajectory(2*i,1), 'o-', 'color', 'green');hold on;
@@ -28,25 +30,23 @@ for index=1:43
     xlabel('X');
     ylabel('Y');
     title('shepherding-optimization-result');
+    % savefilename = strcat(strcat(root_dir,'feature_0/'),strcat(int2str(index),'.fig'));
+    % savefig(h0, savefilename);
+
+% ----------------------- identifying the circular and linear part of evader_center trajectory -----------------------
+    num_circles = 25;
+    points_list = zeros(3,2*num_circles);
+    for t = 1:num_circles
+        points_list(:,2*t-1:2*t) = transpose(evader_center_trajectory(:,t:t+2));
+    end
+    [radius, center] = fit_circle_through_3_points(points_list);
+    
+    for t = 1:num_circles
+        draw_circle(center(1,t),center(2,t),radius(1,t));
+    end
     hold off;
 
-    % angle between the pursuer-evader_center and destination-evader_center
-    % theta = zeros(hp.number_interval,1);
-    % for t = 1:hp.number_interval
-    %     a = pursuer_trajectory(:,t) - evader_center_trajectory(:,t);
-    %     b = hp.destination - evader_center_trajectory(:,t);
-    %     theta(t,1) = acos(dot(a,b)/(norm(a)*norm(b)))*(180/pi);
-    % end
-    % 
-    % figure;
-    % plot(theta, 'o-', 'color', 'blue');hold on;
-    % grid on;
-    % xlabel('time step');
-    % ylabel('angle (in degrees)');
-    % title('angle between pursuer\_position and destination wrt evader\_center_trajectory');
-    % hold off;
-
-    % plotting the evader-separation over time 
+% ----------------------- plotting the evader-separation over time -----------------------
 %     evader_separation = sqrt(sum((evader_trajectory(1:2,:) - evader_trajectory(3:4,:)).^2,1));
 %     h1 = figure;
 %     plot(evader_separation, 'o-', 'color', 'blue');hold on;
@@ -58,7 +58,7 @@ for index=1:43
 %     savefilename = strcat(strcat(root_dir,'feature_1/'),strcat(int2str(index),'.fig'));
 %     savefig(h1, savefilename);
 
-    % plotting the angle of the evader-vector measured wrt X-axis
+% ----------------------- plotting the angle of the evader-vector measured wrt X-axis -----------------------
 %     evader_vector_slope = (evader_trajectory(4,:) - evader_trajectory(2,:))./(evader_trajectory(3,:) - evader_trajectory(1,:));
 %     evader_vector_angle = atan(evader_vector_slope)*180/pi;
 %     % evader_vector_angle(evader_vector_angle < 0) = 180 + evader_vector_angle(evader_vector_angle < 0);
@@ -72,7 +72,7 @@ for index=1:43
 %     savefilename = strcat(strcat(root_dir,'feature_2/'),strcat(int2str(index),'.fig'));
 %     savefig(h2, savefilename);
 
-%     checking whether the two triangles are similar
+% ----------------------- checking whether the two triangles are similar -----------------------
 %     pursuer_evader_vector = evader_trajectory - repmat(pursuer_trajectory,[hp.number_evader,1]);
 %     evader_evader_vector = evader_trajectory(1:2,:) - evader_trajectory(3:4,:);
 %     pursuer_evader_distance = [sqrt(sum(pursuer_evader_vector(1:2,:).^2,1));sqrt(sum(pursuer_evader_vector(3:4,:).^2,1))];
@@ -80,7 +80,7 @@ for index=1:43
 %     similarity_ratio = [pursuer_evader_distance(:,2:hp.number_interval+1)./pursuer_evader_distance(:,1:hp.number_interval);...
 %         evader_evader_distance(:,2:hp.number_interval+1)./evader_evader_distance(:,1:hp.number_interval)];
 
-    % plotting the angle between pursuer-velocity and evader-center-velocity vector
+% ----------------------- plotting the angle between pursuer-velocity and evader-center-velocity vector -----------------------
 %     evader_center_velocity = evader_center_trajectory(:,2:end) - evader_center_trajectory(:,1:end-1);
 %     costheta = zeros(hp.number_interval,1);
 %     for t = 1:hp.number_interval
@@ -97,7 +97,7 @@ for index=1:43
 %     savefilename = strcat(strcat(root_dir,'feature_3/'),strcat(int2str(index),'.fig'));
 %     savefig(h3, savefilename);
 
-    % plotting the angle between pursuer-velocity and destination-evader_center vector
+% ----------------------- plotting the angle between pursuer-velocity and destination-evader_center vector -----------------------
 %     dest_evader_center_vector = repmat(hp.destination,[1,hp.number_interval]) - evader_center_trajectory(:,1:end-1);
 %     costheta = zeros(hp.number_interval,1);
 %     for t = 1:hp.number_interval
@@ -114,21 +114,39 @@ for index=1:43
 %     savefilename = strcat(strcat(root_dir,'feature_4/'),strcat(int2str(index),'.fig'));
 %     savefig(h4, savefilename);
 
-    % plotting the angle between pursuer_velocity and pursuer-evader_center
-    costheta = zeros(hp.number_interval,1);
-    for t = 1:hp.number_interval
-        costheta(t,1) = dot(pursuer_velocity(:,t),pursuer_evader_center_vector(:,t))/(norm(pursuer_velocity(:,t))*norm(pursuer_evader_center_vector(:,t)));
-    end
-    theta = acos(costheta)*180/pi;
-    h5 = figure;
-    plot(theta, 'o-', 'color', 'blue');hold on;
-    grid on;
-    xlabel('time step');
-    ylabel('angle (in degrees)');
-    title('angle between pursuer\_velocity and pursuer\_evader\_center\_vector');
-    hold off;
-    savefilename = strcat(strcat(root_dir,'feature_5/'),strcat(int2str(index),'.fig'));
-    savefig(h5, savefilename);
+% ----------------------- plotting the angle between pursuer_velocity and pursuer-evader_center -----------------------
+    % costheta = zeros(hp.number_interval,1);
+    % for t = 1:hp.number_interval
+    %     costheta(t,1) = dot(pursuer_velocity(:,t),pursuer_evader_center_vector(:,t))/(norm(pursuer_velocity(:,t))*norm(pursuer_evader_center_vector(:,t)));
+    % end
+    % theta = acos(costheta)*180/pi;
+    % h5 = figure;
+    % plot(theta, 'o-', 'color', 'blue');hold on;
+    % grid on;
+    % xlabel('time step');
+    % ylabel('angle (in degrees)');
+    % title('angle between pursuer\_velocity and pursuer\_evader\_center\_vector');
+    % hold off;
+    % savefilename = strcat(strcat(root_dir,'feature_5/'),strcat(int2str(index),'.fig'));
+    % savefig(h5, savefilename);
 
-    close all;
+% ----------------------- angle between the pursuer-evader_center and destination-evader_center -----------------------
+    % theta = zeros(hp.number_interval,1);
+    % for t = 1:hp.number_interval
+    %     a = pursuer_trajectory(:,t) - evader_center_trajectory(:,t);
+    %     b = hp.destination - evader_center_trajectory(:,t);
+    %     theta(t,1) = acos(dot(a,b)/(norm(a)*norm(b)))*(180/pi);
+    % end
+    % 
+    % h6 = figure;
+    % plot(theta, 'o-', 'color', 'blue');hold on;
+    % grid on;
+    % xlabel('time step');
+    % ylabel('angle (in degrees)');
+    % title('angle between pursuer\_position and destination wrt evader\_center_trajectory');
+    % hold off;
+    % savefilename = strcat(strcat(root_dir,'feature_6/'),strcat(int2str(index),'.fig'));
+    % savefig(h6, savefilename);
+
+%     close all;
 end
