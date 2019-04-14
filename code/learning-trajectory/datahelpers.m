@@ -13,7 +13,7 @@ for folder_index = 1:size(folder_dirs,1)
         filename = strcat(file_dir,strcat(int2str(file_index),'.mat'));
         load(filename);
         num_input_features = hp.number_pursuer*2 + hp.number_evader*2 + 6;
-        matrix = zeros(num_input_features, hp.number_interval+1+1);
+        matrix = zeros(num_input_features+2, hp.number_interval+1+1);
         pursuer_position = horzcat(hp.initial_pursuer_position,reshape(hp.opt_x,hp.var,hp.number_interval));
         evader_position = compute_evader_position(pursuer_position,hp.number_evader,hp.initial_evader_position,...
             hp.number_interval,hp.time_interval,hp.vemax_repulsion,hp.vemax_attraction,hp.K);
@@ -25,6 +25,8 @@ for folder_index = 1:size(folder_dirs,1)
         matrix(10,1:end-1) = hp.vpmin;
         matrix(11,1:end-1) = hp.vemax_repulsion;
         matrix(12,1:end-1) = hp.epsilon;
+        matrix(13:14,1:end-2) = pursuer_position(:,2:end);
+        matrix(13:14,end-1) = pursuer_position(:,end);
         matrix(:,end) = 0;
         matrix = matrix';
         final_matrix(rows_final_matrix+1:rows_final_matrix+size(matrix,1),:) = matrix;
