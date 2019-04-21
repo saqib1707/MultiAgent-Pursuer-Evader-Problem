@@ -2,7 +2,7 @@ clc;clear;close all;
 root_dir = '../../results-plots/05-04-19/';
 num_files = size(dir(root_dir),1);
 
-for index = 7
+for index = 1:4
     filename = strcat(strcat(root_dir,'hyperparameters/'),strcat(int2str(index),'.mat'));
     load(filename);
     pursuer_trajectory = horzcat(hp.initial_pursuer_position,reshape(hp.opt_x,2,hp.number_interval));
@@ -34,7 +34,7 @@ for index = 7
     % savefig(h0, savefilename);
 
 % ----------------------- identifying the circular and linear part of evader_center trajectory -----------------------
-    num_circles = 25;
+    num_circles = 10;
     points_list = zeros(3,2*num_circles);
     for t = 1:num_circles
         points_list(:,2*t-1:2*t) = transpose(evader_center_trajectory(:,t:t+2));
