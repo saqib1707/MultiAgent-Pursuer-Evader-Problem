@@ -1,10 +1,11 @@
-# hyperparameters
-window_size = 10
-batch_size = 50
+window_size = 5
+# batch_size = 10
 learning_rate = 0.01
-state_size = 32
 num_outputs = 2
-num_training_epochs = 500
+num_training_epochs = 100
 feature_size = 12
 lstm_state_size = [16, 32]
-keep_prob_ = 0.75
+keep_prob_ = 1.0
+max_gradient_norm = 100
+num_training_samples = 5315
+num_fc_layer_units = 8

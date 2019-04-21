@@ -4,7 +4,7 @@ clc;clear;
 % destination_y, vpmax, vpmin, vemax_repulsion, epsilon, EOS (0)]
 addpath('../pursuer_evader_aggregation/');
 root_dir = '../../results-plots/';
-folder_dirs = ["15-03-19/";"19-03-19/"];
+folder_dirs = ["15-03-19/";"19-03-19/";"05-04-19/"];
 rows_final_matrix = 0;
 
 for folder_index = 1:size(folder_dirs,1)
