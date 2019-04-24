@@ -22,7 +22,7 @@ hp.tolx = 1e-10;
 hp.num_trial_points = 600;
 hp.num_stage_one_points = 200;
 
-file = load('../../results-plots/05-04-19/hyperparameters/2.mat');
+file = load('../../results-plots/05-04-19/hyperparameters/13.mat');
 hp.number_interval = file.hp.number_interval;
 
 hp.var = 2*hp.number_pursuer;
@@ -38,7 +38,7 @@ hp.initial_evader_position = [0.5;0;-0.5;0];
 % hp.starting_point = rand(hp.N,1)*10-5;
 hp.starting_point = file.hp.opt_x;
 
-hp.destination = [5;4];
+hp.destination = [-1;-5];
 hp.lower_bound(1:hp.N,1) = -10.0;
 hp.upper_bound(1:hp.N,1) = 10.0;
 

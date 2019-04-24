@@ -12,7 +12,7 @@ for folder_index = 1:size(folder_dirs,1)
     for file_index = 1:size(dir(strcat(file_dir,'*.mat')),1)
         filename = strcat(file_dir,strcat(int2str(file_index),'.mat'));
         load(filename);
-        num_input_features = hp.number_pursuer*2 + hp.number_evader*2 + 6;
+        num_input_features = hp.number_pursuer*2 + hp.number_evader*2 + 2;
         matrix = zeros(num_input_features+2, hp.number_interval+1+1);
         pursuer_position = horzcat(hp.initial_pursuer_position,reshape(hp.opt_x,hp.var,hp.number_interval));
         evader_position = compute_evader_position(pursuer_position,hp.number_evader,hp.initial_evader_position,...
@@ -21,16 +21,19 @@ for folder_index = 1:size(folder_dirs,1)
         matrix(1:2,1:end-1) = pursuer_position;
         matrix(3:6,1:end-1) = evader_position;
         matrix(7:8,1:end-1) = repmat(hp.destination,[1,hp.number_interval+1]);
-        matrix(9,1:end-1) = hp.vpmax;
-        matrix(10,1:end-1) = hp.vpmin;
-        matrix(11,1:end-1) = hp.vemax_repulsion;
-        matrix(12,1:end-1) = hp.epsilon;
-        matrix(13:14,1:end-2) = pursuer_position(:,2:end);
-        matrix(13:14,end-1) = pursuer_position(:,end);
+        % matrix(9,1:end-1) = hp.vpmax;
+        % matrix(10,1:end-1) = hp.vpmin;
+        % matrix(11,1:end-1) = hp.vemax_repulsion;
+        % matrix(12,1:end-1) = hp.epsilon;
+        matrix(end-1:end,1:end-2) = pursuer_position(:,2:end);
+        matrix(end-1:end,end-1) = pursuer_position(:,end);
         matrix(:,end) = 0;
         matrix = matrix';
         final_matrix(rows_final_matrix+1:rows_final_matrix+size(matrix,1),:) = matrix;
         rows_final_matrix = size(final_matrix,1);
     end
 end
-csvwrite('dataset.csv',final_matrix);
+csvwrite('dataset_train.csv', final_matrix);
+
+test_data = final_matrix(289:319,:);
+csvwrite('dataset_test.csv', test_data);
