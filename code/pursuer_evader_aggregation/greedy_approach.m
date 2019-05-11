@@ -1,7 +1,7 @@
 clear; clc;
 
 % ---------------------hyper-parameters------------------------
-hp.number_interval = 50;
+hp.number_interval = 70;
 hp.time_interval = 1.0;
 hp.number_evader = 2;
 hp.number_pursuer = 1;
@@ -10,8 +10,8 @@ hp.vemax_attraction = 0;
 hp.vp = 0.2;
 hp.K = 1.0;
 hp.epsilon = 0.05;
-hp.angle_resolution = 1.0;
-hp.alpha = 0.7;      % weight factor
+hp.angle_resolution = 1;
+hp.alpha = 0.6;      % weight factor
 
 % hp.initial_pursuer_position = file.initial_pursuer_position;
 hp.initial_pursuer_position = [-1;-1];
@@ -20,7 +20,7 @@ hp.initial_pursuer_position = [-1;-1];
 % hp.initial_evader_position = file.initial_evader_position;
 hp.initial_evader_position = [0.5;0;-0.5;0];
 
-hp.destination = [1;0];
+hp.destination = [2;2];
 % ---------------------------hyper-parameters------------------------
 
 pursuer_trajectory = zeros(2*hp.number_pursuer,hp.number_interval+1);
@@ -62,12 +62,12 @@ inter_evader_distance = norm(evader_trajectory(1:2,hp.number_interval+1) - evade
 distance_list(:,hp.number_interval+1) = [transpose(evader_dest_distance);inter_evader_distance;hp.alpha*sum(evader_dest_distance)+(1-hp.alpha)*inter_evader_distance];
 
 figure;
-plot(pursuer_trajectory(1,:), pursuer_trajectory(2,:), 'o-', 'color', 'blue');hold on;
-for i=1:hp.number_evader
-    plot(evader_trajectory(2*i-1,1),evader_trajectory(2*i,1), 'o-', 'color', 'green');hold on;
-    plot(evader_trajectory(2*i-1,2:hp.number_interval),evader_trajectory(2*i,2:hp.number_interval),'o-','color','yellow');hold on;
-    plot(evader_trajectory(2*i-1,hp.number_interval+1),evader_trajectory(2*i,hp.number_interval+1), 'o-', 'color', 'red');hold on;
-end
+plot(pursuer_trajectory(1,:), pursuer_trajectory(2,:), '.-', 'color', 'blue');hold on;
+% for i=1:hp.number_evader
+%     plot(evader_trajectory(2*i-1,1),evader_trajectory(2*i,1), '.-', 'color', 'green');hold on;
+%     plot(evader_trajectory(2*i-1,2:hp.number_interval),evader_trajectory(2*i,2:hp.number_interval),'.-','color','yellow');hold on;
+%     plot(evader_trajectory(2*i-1,hp.number_interval+1),evader_trajectory(2*i,hp.number_interval+1), '.-', 'color', 'red');hold on;
+% end
 
 for t = 1:hp.number_interval
    plot([evader_trajectory(1,t),evader_trajectory(3,t)],[evader_trajectory(2,t),evader_trajectory(4,t)],'r');
@@ -81,13 +81,13 @@ title('shepherding-greedy-approach');
 hold off;
 
 figure;
-plot(distance_list(1,:),'color','red');hold on;
-plot(distance_list(2,:),'color','green');hold on;
-plot(distance_list(3,:),'color','blue');hold on;
-plot(distance_list(4,:),'color','black');hold on;
+plot(distance_list(1,:),'.-','color','red');hold on;
+plot(distance_list(2,:),'.-','color','green');hold on;
+plot(distance_list(3,:),'.-','color','blue');hold on;
+plot(distance_list(4,:),'.-','color','black');hold on;
 grid on;
-ylabel('distance-metric');
-xlabel('time-step');
+ylabel('distance-metric (J)');
+xlabel('time');
 legend('E1-dest-distance','E2-dest-distance','E1-E2-distance','overall-metric');
-title('distance-metric plot wrt iterations');
+title('distance-metric plot with time');
 hold off;

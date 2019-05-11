@@ -117,7 +117,7 @@ def build_rnn_network(rnn_inputs, cell_state_size, batch_size):
         outputs : [batch_size, max_time, cell_state_size]
     """
     # create a BasicRNNCell
-    rnn_cell = tf.nn.rnn_cell.BasicRNNCell(num_units=cell_state_size)
+    rnn_cell = tf.nn.rnn_cell.BasicRNNCell(num_units=cell_state_size, reuse=tf.AUTO_REUSE)
 
     # defining initial state
     initial_state = rnn_cell.zero_state(batch_size, dtype=tf.float32)
@@ -157,7 +157,7 @@ def gradient_clip(gradients, max_gradient_norm):
     return clipped_gradients, global_norm, gradient_norm_summary
 
 
-def train_network(train_x, train_y, test_x, test_y):
+def train_network(train_x, train_y, model_save_filename):
     network_input = tf.placeholder(dtype=tf.float32, shape=[None, hp.window_size, hp.feature_size], name='input_placeholder')
     network_output = tf.placeholder(dtype=tf.float32, shape=[None, hp.num_outputs], name='output_placeholder')   # ground-truth
     batch_size_tensor = tf.placeholder(dtype=tf.int32, shape=(), name="batch_size")
@@ -196,6 +196,9 @@ def train_network(train_x, train_y, test_x, test_y):
     # This initializer is designed to keep the scale of the gradients roughly the same in all layers
     initializer = tf.contrib.layers.xavier_initializer(uniform=True, dtype=tf.float32)
 
+    # Add ops to save and restore all the variables.
+    saver = tf.train.Saver()
+
     with tf.variable_scope(tf.get_variable_scope(), initializer=initializer): 
         sess.run(tf.global_variables_initializer())
         merged = tf.summary.merge_all()
@@ -218,7 +221,56 @@ def train_network(train_x, train_y, test_x, test_y):
 
         end_time = time.time()
         print("Training time :", end_time - start_time)
-        
+
+        save_path = saver.save(sess, 'saved_model_dir/'+model_save_filename+'.ckpt')
+        print("Model saved in path: %s" % save_path)
+
+
+def test_network(test_x, test_y, model_save_filename):
+    network_input = tf.placeholder(dtype=tf.float32, shape=[None, hp.window_size, hp.feature_size], name='input_placeholder')
+    network_output = tf.placeholder(dtype=tf.float32, shape=[None, hp.num_outputs], name='output_placeholder')   # ground-truth
+    batch_size_tensor = tf.placeholder(dtype=tf.int32, shape=(), name="batch_size")
+
+    num_training_samples = train_x.shape[0]
+    zero_row_indices = np.where(train_x.any(axis=1) == 0)[0]
+    len_zero_row_indices = zero_row_indices.shape[0]
+
+    predicted_output = core_model(network_input, hp.cell_state_size, batch_size_tensor)    # predicted_output : [batch_size, num_outputs]
+    # batch_loss = tf.losses.mean_squared_error(labels=network_output, predictions=tf.reshape(predicted_output, [-1, hp.num_outputs]))
+    # tf.summary.scalar('mean_squared_loss', batch_loss)
+
+    # # optimizer.minimize(total_loss) = optimizer.compute_gradients() -> optimizer.apply_gradients()
+    # optimizer = tf.train.AdamOptimizer(hp.learning_rate)
+
+    # with tf.name_scope("compute_gradients"):
+    #     grads_and_params = optimizer.compute_gradients(loss=batch_loss)
+    #     grads, params = zip(*grads_and_params)
+    #     # for var in params:
+    #     #     tf.summary.histogram(var.name, var)
+    #     clipped_grads, global_norm, grad_norm_summary = gradient_clip(gradients=grads, max_gradient_norm=hp.max_gradient_norm)
+    #     grad_and_vars = zip(clipped_grads, params)
+
+    # """
+    #     global_step refers to the number of batches seen by the graph. Every time a batch is provided, the weights are updated in the direction 
+    #     that minimizes the loss. global_step just keeps track of the number of batches seen so far
+    # """
+    # global_step = tf.train.get_or_create_global_step()
+    # apply_gradient_op = optimizer.apply_gradients(grads_and_vars=grad_and_vars, global_step=global_step)
+
+    # session_config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
+    # session_config.gpu_options.allow_growth = True
+    # sess = tf.Session(config=session_config)
+    # train_writer = tf.summary.FileWriter(hp.log_dir, sess.graph)
+
+    # # This initializer is designed to keep the scale of the gradients roughly the same in all layers
+    # initializer = tf.contrib.layers.xavier_initializer(uniform=True, dtype=tf.float32)
+
+    saver = tf.train.Saver()
+
+    with tf.Session() as sess:
+        # Restore variables from disk.
+        saver.restore(sess, 'saved_model_dir/'+model_save_filename+'.ckpt')
+
         # Testing the network
         test_batch_x = np.reshape(np.copy(test_x[0:hp.window_size]), (1, hp.window_size, hp.feature_size))
 
@@ -308,26 +360,33 @@ if __name__ == '__main__':
     else:
         os.makedirs(hp.log_dir)
 
-    pursuer_trajectory, evader_trajectory = train_network(train_x, train_y, test_x, test_y)
-    # print("Pursuer Trajectory : ", pursuer_trajectory.shape)
-    # print("Evader Trajectory : ", evader_trajectory.shape)
+    model_save_filename = 'ws_'+str(hp.window_size)+'_css_'+str(hp.cell_state_size)+'_fc1_'+str(hp.num_fc_layer_units)+'_lr_'+str(hp.learning_rate) \
+        +'_es_'+str(hp.num_training_epochs)
+    
+    if hp.train == True:
+        train_network(train_x, train_y, model_save_filename)
+    else:
+        pursuer_trajectory, evader_trajectory = test_network(test_x, test_y, model_save_filename)
+        
+        print("Pursuer Trajectory : ", pursuer_trajectory.shape)
+        print("Evader Trajectory : ", evader_trajectory.shape)
 
-    plt.plot(pursuer_trajectory[0,:], pursuer_trajectory[1,:], 'blue', lw=0.5, marker='.', label='pursuer_trajectory')
-    plt.plot(evader_trajectory[0,:], evader_trajectory[1,:], 'red', lw=0.5, marker='.', label='evader_trajectory')
-    plt.plot(evader_trajectory[2,:], evader_trajectory[3,:], 'red', lw=0.5, marker='.')
+        plt.plot(pursuer_trajectory[0,:], pursuer_trajectory[1,:], 'blue', lw=0.5, marker='.', label='pursuer_trajectory')
+        plt.plot(evader_trajectory[0,:], evader_trajectory[1,:], 'red', lw=0.5, marker='.', label='evader_trajectory')
+        plt.plot(evader_trajectory[2,:], evader_trajectory[3,:], 'red', lw=0.5, marker='.')
 
-    destination = test_x[0,6:8]
-    draw_circle(destination[0], destination[1], hp.epsilon)
+        destination = test_x[0,6:8]
+        draw_circle(destination[0], destination[1], hp.epsilon)
 
-    plt.title('Shepherding-prediction-result')
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    plt.grid(True)
-    plt.legend()
-    # plt.show()
+        plt.title('Shepherding-prediction-result')
+        plt.xlabel('X')
+        plt.ylabel('Y')
+        plt.grid(True)
+        plt.legend()
+        # plt.show()
 
-    plt_save_dir = 'results/'
-    plt_save_filename = 'ws_'+str(hp.window_size)+'_css_'+str(hp.cell_state_size)+'_fc1_'+str(hp.num_fc_layer_units)+'_lr_'+str(hp.learning_rate) \
-    +'_es_'+str(hp.num_training_epochs)+'.png'
+        plt_save_dir = 'results/(0,-1,1,-1)/'
+        plt_save_filename = 'ws_'+str(hp.window_size)+'_css_'+str(hp.cell_state_size)+'_fc1_'+str(hp.num_fc_layer_units)+'_lr_'+str(hp.learning_rate) \
+        +'_es_'+str(hp.num_training_epochs)+'.png'
 
-    plt.savefig(plt_save_dir+plt_save_filename)
+        plt.savefig(plt_save_dir+plt_save_filename)
