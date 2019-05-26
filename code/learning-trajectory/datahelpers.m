@@ -6,7 +6,7 @@ feature_list = ["pursuer_position_x"; "pursuer_position_y"; "evader1_position_x"
     "evader2_velocity_y"];
 
 num_input_features = size(feature_list,1);
-num_outputs = 2;
+num_outputs = 6;
 addpath('../pursuer_evader_aggregation/');
 root_dir = '../../results-plots/';
 folder_dirs = ["15-03-19/";"19-03-19/";"05-04-19/"];
@@ -33,15 +33,19 @@ for folder_index = 1:size(folder_dirs,1)
         matrix(9:10,2:end-1) = pursuer_velocity;
         matrix(11:14,1) = 0;
         matrix(11:14,2:end-1) = evader_velocity;
-        matrix(end-1:end,1:end-2) = pursuer_trajectory(:,2:end);
-        matrix(end-1:end,end-1) = pursuer_trajectory(:,end);
+        matrix(15:16,1:end-2) = pursuer_trajectory(:,2:end);
+        matrix(15:16,end-1) = pursuer_trajectory(:,end);
+        matrix(17:20,1:end-2) = evader_trajectory(:,2:end);
+        matrix(17:20,end-1) = evader_trajectory(:,end);
+        % matrix(end-1:end,1:end-2) = pursuer_trajectory(:,2:end);
+        % matrix(end-1:end,end-1) = pursuer_trajectory(:,end);
         matrix(:,end) = 0;
         matrix = matrix';
         final_matrix(rows_final_matrix+1:rows_final_matrix+size(matrix,1),:) = matrix;
         rows_final_matrix = size(final_matrix,1);
     end
 end
-csvwrite('dataset_train.csv', final_matrix);
+csvwrite('data/dataset_train.csv', final_matrix);
 
-test_data = final_matrix(1605:1635,:);
-csvwrite('dataset_test.csv', test_data);
+% test_data = final_matrix(1605:1635,:);
+% csvwrite('dataset_test.csv', test_data);
