@@ -2,20 +2,20 @@
 time_window_size = 5
 cell_state_sizes = [32, 64]
 
-num_evader = 2
-num_pursuer = 1
-num_outputs = 2*(num_evader+num_pursuer)
+# num_evader = 2
+# num_pursuer = 1
+num_outputs = 2
 
 # fc-layer-parameters
-num_fc_units = [32, 8, 2*num_pursuer]
+num_fc_units = [32, 8, 2]
 
 # training-parameters
-num_epochs = 5
+num_epochs = 1000
 learning_rate = 1e-4
-keep_prob_ = 1.0
+keep_prob_ = 0.8
 max_gradient_norm = 10
 
-input_feature_size = 14
+input_feature_size = 8
 epsilon = 0.05       # the destination circle radius
 
 css = ''

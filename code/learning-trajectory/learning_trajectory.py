@@ -7,9 +7,9 @@ Original file is located at
     https://colab.research.google.com/drive/1Y5ZqcnifOF0C-VOpXlIrYFwV-Sb89Q1T
 """
 
-import numpy as np 
+import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import csv
 import time
 import os
@@ -29,6 +29,7 @@ import hparams as hp
 #     # saving the normalized data in csv format for visualization/analysis
 #     # np.savetxt("normalized_dataset.csv", data, delimiter=",", fmt='%1.5f')
 #     return data
+
 
 def get_data(train_data_file_path, test_data_file_path):
     train_data = []
@@ -52,7 +53,9 @@ def get_data(train_data_file_path, test_data_file_path):
     test_x = test_data[:, 0:hp.input_feature_size]
     test_y = test_data[:, hp.input_feature_size:hp.input_feature_size+hp.num_outputs]
 
+    # print(train_x.shape, train_y.shape, test_x.shape, test_y.shape)
     return train_x, train_y, test_x, test_y
+
 
 def get_next_batch(data_x, data_y, step, zero_row_indices):
     if step == 0:
@@ -66,9 +69,10 @@ def get_next_batch(data_x, data_y, step, zero_row_indices):
 
     for index in range(batch_size):
         batch_x[index] = data_x[samples_range[0]+index:samples_range[0]+index+hp.time_window_size]
-        batch_y[index] = data_y[samples_range[0]+index+hp.time_window_size]
+        batch_y[index] = data_y[samples_range[0]+index+hp.time_window_size-1]
 
     return batch_x, batch_y
+
 
 def compute_evader_position(pursuer_next_position, pursuer_current_position, evader_current_position, vemax_repulsion):
     ti = 1.0
@@ -86,6 +90,7 @@ def compute_evader_position(pursuer_next_position, pursuer_current_position, eva
         (pursuer_evader_vector/np.transpose(pursuer_evader_distance))), (4,1));
     evader_next_position = evader_current_position + repulsion_term*ti
     return evader_next_position
+
 
 def create_fc_layer(input_data, num_input_units, num_output_units, variable_scope_name, activation='linear'):
     init = tf.contrib.layers.xavier_initializer(uniform=False, dtype=tf.float32)
@@ -107,6 +112,7 @@ def create_fc_layer(input_data, num_input_units, num_output_units, variable_scop
 
     return fc_layer_output
 
+
 # def build_rnn_layers(rnn_inputs, cell_state_size, batch_size):
 #     """
 #         rnn_inputs : [batch_size, max_time, input_feature_size]
@@ -123,6 +129,7 @@ def create_fc_layer(input_data, num_input_units, num_output_units, variable_scop
 
 #     return outputs, final_state
 
+
 def build_lstm_layers(lstm_inputs, cell_state_sizes, batch_size, keep_prob_):
     lstm_cells = [tf.contrib.rnn.LayerNormBasicLSTMCell(num_units=size) for size in cell_state_sizes]
     # Add dropout to the cell
@@ -132,13 +139,14 @@ def build_lstm_layers(lstm_inputs, cell_state_sizes, batch_size, keep_prob_):
     lstm_outputs, final_state = tf.nn.dynamic_rnn(cell=stacked_rnn_cell, inputs=lstm_inputs, dtype=tf.float32)
     return lstm_outputs, final_state
 
+
 def core_model(inputs, cell_state_sizes, batch_size, keep_prob):
     # rnn_outputs, final_state = build_rnn_layers(inputs, cell_state_sizes, batch_size)
     rnn_outputs, final_state = build_lstm_layers(inputs, cell_state_sizes, batch_size, keep_prob)
     rnn_final_output = rnn_outputs[:,-1,:]      # taking the final state output (many-to-one)
-
     num_input_units = cell_state_sizes[-1]
     prev_layer = tf.reshape(rnn_final_output, [-1, num_input_units])
+
     for l in range(len(hp.num_fc_units)):
         if l == len(hp.num_fc_units)-1:
             activation = 'linear'
@@ -149,11 +157,9 @@ def core_model(inputs, cell_state_sizes, batch_size, keep_prob):
         prev_layer = next_layer
         num_input_units = hp.num_fc_units[l]
 
-    # fc_layer_1 = create_fc_layer(rnn_final_output, cell_state_size, hp.num_fc_units, 'first_fc_layer', 'relu')  # fc_layer_output.shape = [batch_size, num_fc_units]
-    # predicted_output = create_fc_layer(fc_layer_1, hp.num_fc_units, hp.num_outputs, 'final_fc_layer')  # logits.shape = [batch_size, num_outputs]
-
     predicted_output = next_layer
     return predicted_output
+
 
 def gradient_clip(grads, max_grad_norm):
     clipped_grads, global_norm = tf.clip_by_global_norm(t_list=grads, clip_norm=max_grad_norm)  # (t_list*clip_norm)/max(clip_norm, global_norm)
@@ -161,26 +167,51 @@ def gradient_clip(grads, max_grad_norm):
     # grad_norm_summary.append(tf.summary.scalar("clipped_gradient", tf.global_norm(clipped_grads)))
     return clipped_grads, global_norm
 
+
+def compute_evader_position_tf(pursuer_next_position, pursuer_current_position, evader_current_position, vemax_repulsion):
+    ti = 1.0
+    K = 1.0
+    vemax_attraction = 0
+    pursuer_next_position = tf.reshape(pursuer_next_position, [2,1])
+    pursuer_current_position = tf.reshape(pursuer_current_position, [2,1])
+    evader_current_position = tf.reshape(evader_current_position, [4,1])
+
+    pursuer_evader_vector = tf.transpose(tf.reshape(evader_current_position, [2,2])) - pursuer_current_position  # (2,2)
+    pursuer_velocity = (pursuer_next_position - pursuer_current_position)/ti    # (2,1)
+    pursuer_evader_distance = tf.reshape(tf.sqrt(tf.reduce_sum(tf.square(pursuer_evader_vector), axis=0)), [2,1])     # (2,1)
+    pursuer_speed = tf.sqrt(tf.reduce_sum(tf.square(pursuer_velocity)))
+    costheta = tf.matmul(tf.transpose(pursuer_evader_vector), pursuer_velocity)/(pursuer_evader_distance*pursuer_speed) # (2,1)
+    repulsion_term = tf.reshape(tf.transpose(0.5*vemax_repulsion*tf.transpose(tf.exp(-K*pursuer_evader_distance)*(1+costheta))*
+        (pursuer_evader_vector/tf.transpose(pursuer_evader_distance))), [4,1])
+    evader_next_position = tf.add(evader_current_position, repulsion_term*ti)
+    return evader_next_position
+
+
 def train_network(train_x, train_y):
     network_input = tf.placeholder(dtype=tf.float32, shape=[None, hp.time_window_size, hp.input_feature_size], name='input_placeholder')
     network_output = tf.placeholder(dtype=tf.float32, shape=[None, hp.num_outputs], name='output_placeholder')   # ground-truth
     batch_size_placeholder = tf.placeholder(dtype=tf.int32, shape=(), name='batch_size')
     keep_prob = tf.placeholder_with_default(input=1.0, shape=())
-    
-    predicted_evader_position = tf.placeholder(dtype=tf.float32, shape=[None, 2*hp.num_evader], name='evader_prediction')
-    destination_loss = tf.placeholder_with_default(input=0.0, shape=())
 
     num_training_samples = train_x.shape[0]
     zero_row_indices = np.where(train_x.any(axis=1) == 0)[0]
     num_zero_row_indices = num_batches = zero_row_indices.shape[0]
 
     predicted_pursuer_position = core_model(network_input, hp.cell_state_sizes, batch_size_placeholder, keep_prob)    # predicted_output : [batch_size,2]
-    # print(predicted_pursuer_position.get_shape())
-    predicted_positions = tf.concat([predicted_pursuer_position, predicted_evader_position], axis=1)
-#     batch_loss = tf.losses.mean_squared_error(labels=network_output, predictions=tf.reshape(predicted_output, [-1, hp.num_outputs]))
-    
-    pursuer_evader_loss = tf.reduce_mean(tf.square(tf.subtract(network_output, tf.reshape(predicted_positions, [-1, hp.num_outputs]))))
-    batch_loss = pursuer_evader_loss + destination_loss
+    predicted_pursuer_position = tf.reshape(predicted_pursuer_position, [-1, hp.num_outputs])
+    # evader_final_position = compute_evader_position_tf(predicted_pursuer_position[-1,:], network_input[-1,-1,0:2], network_input[-1,-1,2:6], 0.4)
+
+    # evader_positions = []
+    # for i in range(batch_size_placeholder.eval()):
+    #     evader_next_position = compute_evader_position_tf(predicted_pursuer_position)
+
+    destination_loss = 0
+    # destination_loss = tf.reduce_sum(tf.sqrt(tf.reduce_sum(tf.square(tf.transpose(tf.reshape(evader_final_position, [2,2])) - 
+    #     tf.reshape(network_input[-1,-1,6:8], [2,1])), axis=0)))
+
+    pursuer_evader_loss = tf.reduce_mean(tf.reduce_sum(tf.square(tf.subtract(network_output, predicted_pursuer_position)), axis=1))
+
+    batch_loss = tf.add(pursuer_evader_loss, destination_loss)
     tf.summary.scalar('mean_squared_loss', batch_loss)
 
     # optimizer.minimize(total_loss) = optimizer.compute_gradients() -> optimizer.apply_gradients()
@@ -211,41 +242,46 @@ def train_network(train_x, train_y):
 
     saver = tf.train.Saver()
 
-    with tf.variable_scope(tf.get_variable_scope(), initializer=initializer): 
+    with tf.variable_scope(tf.get_variable_scope(), initializer=initializer):
         sess.run(tf.global_variables_initializer())
         merged_summary = tf.summary.merge_all()
 
         start_time = time.time()
         print('Training Start\n')
+        
         for epoch in range(hp.num_epochs):
             print("Training:: epoch:", epoch)
             for step in range(num_batches):
                 [batch_x, batch_y] = get_next_batch(train_x, train_y, step, zero_row_indices)
-                ppp = sess.run([predicted_pursuer_position],
-                    feed_dict={
-                        network_input: batch_x,
-                        batch_size_placeholder: batch_x.shape[0],
-                        keep_prob: 1.0
-                    }
-                )
-                print(ppp.shape)
-                ppp = np.array(ppp[0])
-                
-                pep = []
-                for i in range(batch_x.shape[0]):
-                    if i == 0:
-                        pep.append(compute_evader_position(ppp[i], batch_x[i, hp.time_window_size-1, 0:2], batch_x[i, hp.time_window_size-1, 2:6], 0.3))
-                    else:
-                        pep.append(compute_evader_position(ppp[i], ppp[i-1], pep[i-1], 0.3))
-                pep = np.reshape(pep, (batch_x.shape[0], 2*hp.num_evader))
 
-                _, loss_val, summary, iter_count = sess.run([apply_gradient_op, batch_loss, merged_summary, global_step], 
+                # ppp = np.array(sess.run(predicted_pursuer_position,
+                #     feed_dict={
+                #         network_input: batch_x,
+                #         batch_size_placeholder: batch_x.shape[0],
+                #         keep_prob: hp.keep_prob_
+                #     }
+                # ))
+
+                # for i in range(batch_x.shape[0]):
+                #     enp = compute_evader_position(ppp[i], batch_x[i, hp.time_window_size-1, 0:2], batch_x[i, hp.time_window_size-1, 2:6], 0.3)
+
+                # dest_loss = np.sqrt(np.sum(np.square(enp[0:2,0]-batch_x[0,0,6:8]))) + np.sqrt(np.sum(np.square(enp[2:4,0]-batch_x[0,0,6:8])))
+
+                _, iter_count = sess.run([apply_gradient_op, global_step],
                     feed_dict={
                         network_input: batch_x,
                         network_output: batch_y,
                         batch_size_placeholder: batch_x.shape[0],
-                        keep_prob: hp.keep_prob_,
-                        predicted_evader_position: pep
+                        keep_prob: hp.keep_prob_
+                    }
+                )
+
+                loss_val, summary = sess.run([batch_loss, merged_summary],
+                    feed_dict={
+                        network_input: batch_x,
+                        network_output: batch_y,
+                        batch_size_placeholder: batch_x.shape[0],
+                        keep_prob: hp.keep_prob_
                     }
                 )
                 train_writer.add_summary(summary, iter_count)
@@ -257,8 +293,10 @@ def train_network(train_x, train_y):
             os.mkdir(hp.model_base_dir)
         if os.path.isdir(hp.model_save_dir) == False:
             os.mkdir(hp.model_save_dir)
+
         save_path = saver.save(sess, hp.model_save_dir+hp.model_save_filename+'.ckpt')
         print('Model saved in path: %s' % save_path)
+
 
 def test_network(test_x, test_y):
     print('\nPerfomance on test data\n')
@@ -267,9 +305,6 @@ def test_network(test_x, test_y):
     network_output = tf.placeholder(dtype=tf.float32, shape=[None, hp.num_outputs], name='output_placeholder')   # ground-truth
     batch_size_placeholder = tf.placeholder(dtype=tf.int32, shape=(), name='batch_size')
     keep_prob = tf.placeholder_with_default(input=1.0, shape=())
-    
-    predicted_evader_position = tf.placeholder(dtype=tf.float32, shape=[None,2*hp.num_evader], name='evader_prediction')
-    destination_loss = tf.placeholder_with_default(input=0.0, shape=())
 
     zero_row_indices = np.where(test_x.any(axis=1) == 0)[0]
     num_zero_row_indices = num_batches = zero_row_indices.shape[0]
@@ -284,12 +319,13 @@ def test_network(test_x, test_y):
 
         for k in range(num_batches):
             if k == 0:
-                num_interval = zero_row_indices[k] - hp.time_window_size
+                num_interval = zero_row_indices[k] - hp.time_window_size + 1
                 test_batch_x = np.reshape(np.copy(test_x[0:hp.time_window_size]), (1, hp.time_window_size, hp.input_feature_size))
             else:
-                num_interval = (zero_row_indices[k] - zero_row_indices[k-1] - 1) - hp.time_window_size
+                num_interval = (zero_row_indices[k] - zero_row_indices[k-1]) - hp.time_window_size
                 test_batch_x = np.reshape(np.copy(test_x[zero_row_indices[k-1]+1:zero_row_indices[k-1]+1+hp.time_window_size]), \
                     (1, hp.time_window_size, hp.input_feature_size))
+
             print('Index::', k, 'Pursuer Position::', test_batch_x[0,0,0:2], 'Destination::', test_batch_x[0,0,6:8])
 
             pursuer_trajectory = []
@@ -309,17 +345,19 @@ def test_network(test_x, test_y):
                 )
                 pursuer_next_position = np.reshape(pursuer_next_position, (2,1))
                 evader_next_position = compute_evader_position(pursuer_next_position, pursuer_trajectory[j+hp.time_window_size-1], 
-                    evader_trajectory[j+hp.time_window_size-1], 0.3)
+                    evader_trajectory[j+hp.time_window_size-1], 0.4)
+
+                pursuer_trajectory.append(pursuer_next_position)
+                evader_trajectory.append(evader_next_position)
 
                 test_batch_x[0, 0:hp.time_window_size-1, :] = np.copy(test_batch_x[0, 1:hp.time_window_size, :])
                 test_batch_x[0, hp.time_window_size-1, 0:2] = np.reshape(np.copy(pursuer_next_position), (2))
                 test_batch_x[0, hp.time_window_size-1, 2:6] = np.reshape(np.copy(evader_next_position), (4))
 
-                pursuer_trajectory.append(pursuer_next_position)
-                evader_trajectory.append(evader_next_position)
-
             pursuer_trajectory = np.transpose(np.array(pursuer_trajectory)[:,:,0])  # (2,number_interval)
             evader_trajectory = np.transpose(np.array(evader_trajectory)[:,:,0])    # (4,number_interval)
+
+            # print(pursuer_trajectory.shape, evader_trajectory.shape)
 
             plt.plot(pursuer_trajectory[0,:], pursuer_trajectory[1,:], 'blue', lw=0.5, marker='.', label='pursuer_trajectory')
             plt.plot(evader_trajectory[0,:], evader_trajectory[1,:], 'red', lw=0.5, marker='.', label='evader1_trajectory')
@@ -342,13 +380,14 @@ def test_network(test_x, test_y):
 
             plt_save_filename = str(test_batch_x[0,0,0])+'_'+str(test_batch_x[0,0,1])+'_'+str(test_batch_x[0,0,6])+'_'+ \
             str(test_batch_x[0,0,7])+'.png'
-            
+
             if os.path.isdir(hp.plt_base_dir) == False:
                 os.mkdir(hp.plt_base_dir)
             if os.path.isdir(hp.plt_save_dir) == False:
                 os.mkdir(hp.plt_save_dir)
             plt.savefig(hp.plt_save_dir+plt_save_filename)
             plt.close()
+
 
 def check_compute_evader_function(data_file_path):
     data = []
@@ -358,25 +397,41 @@ def check_compute_evader_function(data_file_path):
             data.append(row)
     data = np.array(data, dtype=np.float32)
 
-    initial_index = 3379
-    end_index = 3459
+    initial_index = 65
+    end_index = 95
 
     pursuer_trajectory = np.transpose(data[initial_index-1:end_index+1, 0:2])
     initial_evader_position = np.transpose(data[initial_index-1,2:6])
     evader_trajectory = []
     evader_trajectory.append(np.reshape(initial_evader_position,(4,1)))
-    
+
+    # sess = tf.Session()
+    # evader_trajectory_tf = []
+    # evader_trajectory_tf.append(np.reshape(initial_evader_position,(4,1)))
+
     for index in range(end_index - initial_index):
-        evader_trajectory.append(compute_evader_position(np.reshape(pursuer_trajectory[:,index+1],(2,1)), np.reshape(pursuer_trajectory[:,index], (2,1)), 
-            evader_trajectory[index], 0.4))
+        evader_trajectory.append(compute_evader_position(pursuer_trajectory[:,index+1], pursuer_trajectory[:,index], 
+            evader_trajectory[index], 0.5))
+        # evader_trajectory_tf.append(sess.run(compute_evader_position_tf(pursuer_trajectory[:,index+1], pursuer_trajectory[:,index], \
+        #     evader_trajectory[index], 0.5)))
 
     evader_trajectory = np.array(evader_trajectory)[:,:,0]
-    plt.plot(evader_trajectory[:,0],evader_trajectory[:,1], 'yellow', lw=1.0, marker='.')
-    plt.plot(evader_trajectory[:,2],evader_trajectory[:,3], 'yellow', lw=1.0, marker='.')
+    # evader_trajectory_tf = np.array(evader_trajectory_tf)[:,:,0]
+
+    # print(evader_trajectory - evader_trajectory_tf)
+
     plt.plot(pursuer_trajectory[0,:-1],pursuer_trajectory[1,:-1], 'blue', lw=1.0, marker='.')
+
+    # plt.plot(evader_trajectory_tf[:,0],evader_trajectory_tf[:,1], 'brown', lw=1.0, marker='.')
+    # plt.plot(evader_trajectory_tf[:,2],evader_trajectory_tf[:,3], 'brown', lw=1.0, marker='.')
+
+    plt.plot(evader_trajectory[:,0],evader_trajectory[:,1], 'green', lw=1.0, marker='.')
+    plt.plot(evader_trajectory[:,2],evader_trajectory[:,3], 'green', lw=1.0, marker='.')
+
     draw_circle(data[initial_index-1, 6], data[initial_index-1, 7], 0.05)
     plt.grid(True)
     plt.show()
+
 
 def draw_circle(x_center, y_center, radius, angle_resolution=0.1):
     angles = np.linspace(0, 2*np.pi, 360/angle_resolution)
@@ -384,9 +439,9 @@ def draw_circle(x_center, y_center, radius, angle_resolution=0.1):
     yp = radius*np.sin(angles)
     plt.plot(x_center+xp, y_center+yp, 'black')
 
+
 if __name__ == '__main__':
     # check_compute_evader_function(hp.train_data_file_path)
-    
     train_x, train_y, test_x, test_y = get_data(hp.train_data_file_path, hp.test_data_file_path)
     
     if os.path.isdir(hp.summary_dir) == True:
@@ -394,11 +449,12 @@ if __name__ == '__main__':
         os.makedirs(hp.summary_dir)
     else:
         os.makedirs(hp.summary_dir)
-    
+
     if hp.train_bool == True:
         train_network(train_x, train_y)
     if hp.test_bool == True:
         test_network(test_x, test_y)
+
 
 # from google.colab import files
 # !zip -r /content/save_model_dir_1707.zip /content/save_model_dir/
