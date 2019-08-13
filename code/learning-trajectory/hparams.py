@@ -11,7 +11,7 @@ num_fc_units = [32, 8, 2]
 
 # training-parameters
 num_epochs = 1000
-learning_rate = 1e-4
+learning_rate = 1e-3
 keep_prob_ = 0.8
 max_gradient_norm = 10
 
