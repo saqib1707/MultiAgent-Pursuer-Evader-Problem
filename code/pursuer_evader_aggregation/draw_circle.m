@@ -7,5 +7,5 @@ function draw_circle(x_center ,y_center, r)
     ang=0:0.001:2*pi; 
     xp=r*cos(ang);
     yp=r*sin(ang);
-    plot(x_center+xp, y_center+yp, 'color', 'black');
+    plot(x_center+xp, y_center+yp, 'color', 'black', 'LineWidth', 1);
 end

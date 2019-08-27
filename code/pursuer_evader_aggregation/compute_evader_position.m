@@ -4,6 +4,11 @@ function [evader_position] = compute_evader_position(pursuer_position, Ne, iep, 
 
     for t=1:Ni
         pursuer_evader_vector = reshape(evader_position(:,t),2,Ne) - repmat(pursuer_position(:,t),[1,Ne]);
+%         if t==1
+%             pursuer_velocity = (pursuer_position(:,t+1) - pursuer_position(:,t))/ti;
+%         else
+%             pursuer_velocity = (pursuer_position(:,t) - pursuer_position(:,t-1))/ti;
+%         end
         pursuer_velocity = (pursuer_position(:,t+1) - pursuer_position(:,t))/ti;
         pursuer_evader_distance = sqrt(sum(pursuer_evader_vector.^2,1));
         costheta = (transpose(pursuer_velocity)*pursuer_evader_vector)./(pursuer_evader_distance*norm(pursuer_velocity));
