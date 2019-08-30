@@ -1,7 +1,7 @@
 clear; clc;
 
 % ---------------------hyperparameters------------------------
-hp.number_interval = 40;
+hp.number_interval = 30;
 hp.time_interval = 1.0;
 hp.number_evader = 2;
 hp.number_pursuer = 1;
@@ -19,7 +19,7 @@ hp.max_iter = 1e4;
 hp.tolfun = 1e-3;
 hp.tolcon = 1e-3;
 hp.tolx = 1e-10;
-hp.num_trial_points = 1000;
+hp.num_trial_points = 500;
 hp.num_stage_one_points = 200;
 
 % file = load('../../results-plots/05-04-19/hyperparameters/13.mat');
@@ -46,7 +46,9 @@ hp.initial_pursuer_position = [-1;-1];
 % destination_list = [[1;1],[1;0.5],[1;0],[1;-0.5],[1;-1],[0.5;-1],[0;-1],[-0.5;-1],[-1;-1],[-1;-0.5],...
 %     [-1;0],[-1;0.5],[-1;1],[-0.5;1],[0;1],[0.5;1]];
 
-destination_list = [[2;0],[1;-2],[0;-2],[-1;-2],[-2;-2],[-2;-1],[-2;0],[-2;1],[-2;2],[-1;2],[0;2],[1;2]];
+destination_list = [[1;1]];
+
+% destination_list = [[2;0],[1;-2],[0;-2],[-1;-2],[-2;-2],[-2;-1],[-2;0],[-2;1],[-2;2],[-1;2],[0;2],[1;2]];
 
 for index = 1:size(destination_list,2)
     tic;
@@ -97,7 +99,7 @@ for index = 1:size(destination_list,2)
 %         plot(evader_optimized_trajectory(2*i-1,2:hp.number_interval), evader_optimized_trajectory(2*i,2:hp.number_interval), '.-', 'color', 'yellow');hold on;
 %         plot(evader_optimized_trajectory(2*i-1,hp.number_interval+1), evader_optimized_trajectory(2*i,hp.number_interval+1), '.-', 'color', 'red');hold on;
 %     end
-    for t = 1:hp.number_interval 
+    for t = 1:hp.number_interval+1 
        plot([evader_optimized_trajectory(1,t), evader_optimized_trajectory(3,t)], [evader_optimized_trajectory(2,t), evader_optimized_trajectory(4,t)], ...
            'color', 'red', 'LineWidth', 1);
     end
@@ -108,18 +110,18 @@ for index = 1:size(destination_list,2)
     title('shepherding-optimization-result');
     hold off;
 
-    if or((hp.exitflag == 1), (hp.exitflag == 2))
+%     if or((hp.exitflag == 1), (hp.exitflag == 2))
         filename = strcat(num2str(hp.initial_pursuer_position(1,1)), '_', num2str(hp.initial_pursuer_position(2,1)), '_', ...
             num2str(hp.destination(1,1)), '_', num2str(hp.destination(2,1)));
 
-        savefilename_fig = strcat('../../results-plots/final_attempt_result/fig_format/', filename, '.fig');
-        savefilename_png = strcat('../../results-plots/final_attempt_result/png_format/', filename, '.png');
+        savefilename_fig = strcat('../../results_plots/final_attempt_result/fig_format/', filename, '.fig');
+        savefilename_png = strcat('../../results_plots/final_attempt_result/png_format/', filename, '.png');
         savefig(h0, savefilename_fig);
         saveas(h0, savefilename_png);
 
-        savefilename_hparams = strcat('../../results-plots/final_attempt_result/hparams/', filename, '.mat');
+        savefilename_hparams = strcat('../../results_plots/final_attempt_result/hparams/', filename, '.mat');
         save(savefilename_hparams, 'hp');
-    end
+%     end
     close;
 
     elapsed_time = toc;
