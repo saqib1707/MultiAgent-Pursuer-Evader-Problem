@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import nlopt
 import pdb
 
-number_interval = 20
+number_interval = 30
 epsilon = 1e-2
 input_bound = 1.0
 max_eval = 200000
@@ -17,7 +17,7 @@ def objective_function(x, grad):
 	global count_eval
 	count_eval += 1
 	total_time = number_interval*x[N-1]
-	print(count_eval, total_time)
+	# print(count_eval, total_time)
 	return total_time
 
 def inequality_constraint_1(x):

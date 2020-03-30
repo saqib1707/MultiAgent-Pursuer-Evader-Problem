@@ -18,7 +18,7 @@ def objective_function(x, grad):
 	global count_eval
 	count_eval += 1
 	total_time = number_interval*x[var*number_interval]
-	print(count_eval, total_time)
+	# print(count_eval, total_time)
 	return total_time
 
 def inequality_constraint_1(x):

@@ -1,7 +1,7 @@
 clear; clc;
 
 % ---------------------hyperparameters------------------------
-hp.number_interval = 30;
+hp.number_interval = 40;
 hp.time_interval = 1.0;
 hp.number_evader = 2;
 hp.number_pursuer = 1;
@@ -19,10 +19,10 @@ hp.max_iter = 1e4;
 hp.tolfun = 1e-3;
 hp.tolcon = 1e-3;
 hp.tolx = 1e-10;
-hp.num_trial_points = 500;
+hp.num_trial_points = 200;
 hp.num_stage_one_points = 200;
 
-% file = load('../../results-plots/05-04-19/hyperparameters/13.mat');
+% file = load('../../results_plots/final_attempt_result/hparams/-1_-1_2_2.mat');
 % hp.number_interval = file.hp.number_interval;
 
 % hp.initial_evader_position = rand(2*hp.number_evader,1)*2-1;
@@ -32,8 +32,8 @@ hp.initial_evader_position = [0.5;0;-0.5;0];
 hp.var = 2*hp.number_pursuer;
 hp.num_opt_var = hp.var*hp.number_interval;
 
-hp.lower_bound(1:hp.num_opt_var,1) = -5.0;
-hp.upper_bound(1:hp.num_opt_var,1) = 5.0;
+hp.lower_bound(1:hp.num_opt_var,1) = -3.0;
+hp.upper_bound(1:hp.num_opt_var,1) = 3.0;
 
 hp.Aineq = [];
 hp.bineq = [];
@@ -52,7 +52,7 @@ destination_list = [[1;1]];
 
 for index = 1:size(destination_list,2)
     tic;
-    % hp.starting_point = file.hp.opt_x;
+%     hp.starting_point = file.hp.opt_x;
     hp.starting_point = rand(hp.num_opt_var,1)*4-2;
     hp.destination = destination_list(:,index);
 
